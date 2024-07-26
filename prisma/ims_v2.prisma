@@ -216,7 +216,6 @@ model JudgeSchedule {
   internshipId  String
   scheduledDate DateTime
   duration      Int
-  location      String?
   status        ScheduleStatus
   judge         User      @relation(fields: [judgeId], references: [id])
   internship    StudentInternship @relation(fields: [internshipId], references: [id])
