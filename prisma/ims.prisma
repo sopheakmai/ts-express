@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum InternshipStatus {
+  Applied
+  Shortlisted
+  Accepted
+  Ongoing
+  Completed
+  Cancellaed
+}
+
+enum UserType {
+  Admin
+  Student
+  Supervisor
+  Advisor
+  Judge
+}
+
+model user {
+  recid     String   @id @default(uuid())
+  username  String?
+  email     String   @unique
+  phone     String   @unique
+  firstName String
+  lastName  String
+  password  String
+  userType  UserType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLogin DateTime?
+}
+
+
+model StudentInternship {
+  recid     String   @id @default(uuid())
+  studentId    Int
+  status       InternshipStatus
+  supervisorId Int?
+  advisorId    Int?
+  startDate    DateTime?
+  endDate      DateTime?
+  finalScore   Float?
+}

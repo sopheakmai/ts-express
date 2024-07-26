@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // You can change this to your preferred database
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int                @id @default(autoincrement())
+  username          String             @unique
+  password          String
+  email             String             @unique
+  firstName         String
+  lastName          String
+  userType          UserType
+  phone             String?
+  createdAt         DateTime           @default(now())
+  lastLogin         DateTime?
+  createdListings   InternshipListing[]
+  studentInternships StudentInternship[] @relation("Student")
+  supervisedInternships StudentInternship[] @relation("Supervisor")
+  advisedInternships StudentInternship[] @relation("Advisor")
+  uploadedDocuments Document[]
+  uploadedTemplates ReportTemplate[]
+  reviewedReports   StudentReport[]
+  evaluationScores  EvaluationScore[]
+  appraisalForms    AppraisalForm[]
+  studentRequests   StudentRequest[]   @relation("Student")
+  advisorRequests   StudentRequest[]   @relation("Advisor")
+  judgeSchedules    JudgeSchedule[]
+}
+
+enum UserType {
+  Admin
+  Student
+  Supervisor
+  Advisor
+  Judge
+}
+
+model InternshipListing {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  description        String
+  companyName        String
+  location           String
+  startDate          DateTime
+  endDate            DateTime
+  applicationDeadline DateTime
+  requiredSkills     String?
+  stipend            Float?
+  createdBy          Int
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  isActive           Boolean   @default(true)
+  creator            User      @relation(fields: [createdBy], references: [id])
+  studentInternships StudentInternship[]
+}
+
+model StudentInternship {
+  id           Int       @id @default(autoincrement())
+  studentId    Int
+  listingId    Int
+  status       InternshipStatus
+  supervisorId Int?
+  advisorId    Int?
+  startDate    DateTime?
+  endDate      DateTime?
+  finalScore   Float?
+  student      User      @relation("Student", fields: [studentId], references: [id])
+  listing      InternshipListing @relation(fields: [listingId], references: [id])
+  supervisor   User?     @relation("Supervisor", fields: [supervisorId], references: [id])
+  advisor      User?     @relation("Advisor", fields: [advisorId], references: [id])
+  documents    Document[]
+  reports      StudentReport[]
+  evaluationScores EvaluationScore[]
+  appraisalForms AppraisalForm[]
+  judgeSchedules JudgeSchedule[]
+}
+
+enum InternshipStatus {
+  Applied
+  Shortlisted
+  Accepted
+  Ongoing
+  Completed
+  Cancelled
+}
+
+model Document {
+  id           Int       @id @default(autoincrement())
+  internshipId Int
+  documentType DocumentType
+  title        String
+  filePath     String
+  fileSize     Int
+  uploadDate   DateTime  @default(now())
+  uploadedBy   Int
+  internship   StudentInternship @relation(fields: [internshipId], references: [id])
+  uploader     User      @relation(fields: [uploadedBy], references: [id])
+}
+
+enum DocumentType {
+  Application
+  Offer_Letter
+  Agreement
+  Weekly_Report
+  Monthly_Report
+  Final_Report
+  Follow_up
+  Other
+}
+
+model ReportTemplate {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  filePath    String
+  uploadedBy  Int
+  createdAt   DateTime  @default(now())
+  uploader    User      @relation(fields: [uploadedBy], references: [id])
+  reports     StudentReport[]
+}
+
+model StudentReport {
+  id             Int       @id @default(autoincrement())
+  internshipId   Int
+  templateId     Int?
+  reportType     ReportType
+  submissionDate DateTime  @default(now())
+  content        String?
+  status         ReportStatus
+  reviewedBy     Int?
+  reviewDate     DateTime?
+  comments       String?
+  internship     StudentInternship @relation(fields: [internshipId], references: [id])
+  template       ReportTemplate?   @relation(fields: [templateId], references: [id])
+  reviewer       User?     @relation(fields: [reviewedBy], references: [id])
+}
+
+enum ReportType {
+  Weekly
+  Monthly
+  Final
+}
+
+enum ReportStatus {
+  Draft
+  Submitted
+  Reviewed
+  Approved
+  Rejected
+}
+
+model EvaluationCriteria {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  maxScore    Int
+  scores      EvaluationScore[]
+}
+
+model EvaluationScore {
+  id             Int       @id @default(autoincrement())
+  internshipId   Int
+  criteriaId     Int
+  scoredBy       Int
+  scoreType      ScoreType
+  score          Float
+  comments       String?
+  evaluationDate DateTime  @default(now())
+  internship     StudentInternship @relation(fields: [internshipId], references: [id])
+  criteria       EvaluationCriteria @relation(fields: [criteriaId], references: [id])
+  scorer         User      @relation(fields: [scoredBy], references: [id])
+}
+
+enum ScoreType {
+  Defense
+  Final
+}
+
+model AppraisalForm {
+  recid     String       @id @default(uuid())
+  internshipId           Int
+  supervisorId           Int
+  submissionDate         DateTime  @default(now())
+  performanceRating      Int
+  strengthsObserved      String?
+  areasForImprovement    String?
+  recommendationsForFuture String?
+  internship             StudentInternship @relation(fields: [internshipId], references: [id])
+  supervisor             User      @relation(fields: [supervisorId], references: [id])
+}
+
+model StudentRequest {
+  id               Int       @id @default(autoincrement())
+  studentId        Int
+  advisorId        Int
+  requestType      String
+  description      String?
+  requestDate      DateTime  @default(now())
+  status           RequestStatus
+  responseDate     DateTime?
+  responseComments String?
+  student          User      @relation("Student", fields: [studentId], references: [id])
+  advisor          User      @relation("Advisor", fields: [advisorId], references: [id])
+}
+
+enum RequestStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+model JudgeSchedule {
+  id            Int       @id @default(autoincrement())
+  judgeId       Int
+  internshipId  Int
+  scheduledDate DateTime
+  duration      Int
+  location      String?
+  status        ScheduleStatus
+  judge         User      @relation(fields: [judgeId], references: [id])
+  internship    StudentInternship @relation(fields: [internshipId], references: [id])
+}
+
+enum ScheduleStatus {
+  Scheduled
+  Completed
+  Cancelled
+}
