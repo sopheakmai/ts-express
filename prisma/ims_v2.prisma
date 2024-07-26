@@ -15,7 +15,7 @@ model User {
   firstName         String
   lastName          String
   userType          UserType
-  phone             String?
+  phone             String?            @unique
   createdAt         DateTime           @default(now())
   lastLogin         DateTime?
   createdListings   InternshipListing[]
@@ -41,13 +41,8 @@ model InternshipListing {
   id                 String       @id @default(uuid())
   title              String
   description        String
-  companyName        String
-  location           String
   startDate          DateTime
   endDate            DateTime
-  applicationDeadline DateTime
-  requiredSkills     String?
-  stipend            Float?
   createdBy          String
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -60,11 +55,12 @@ model StudentInternship {
   id           String       @id @default(uuid())
   studentId    String
   listingId    String
-  status       InternshipStatus
+  companyName  String
   advisorId    String?
   startDate    DateTime?
   endDate      DateTime?
   finalScore   Float?
+  status       InternshipStatus
   student      User      @relation("Student", fields: [studentId], references: [id])
   listing      InternshipListing @relation(fields: [listingId], references: [id])
   advisor      User?     @relation("Advisor", fields: [advisorId], references: [id])
